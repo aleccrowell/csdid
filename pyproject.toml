@@ -10,7 +10,7 @@ authors = [
 ]
 license = "MIT"
 readme = "README.md"
-requires-python = ">=3.8,<4.0"
+requires-python = ">=3.9,<4.0"
 keywords = ["Causal inference", "Research"]
 classifiers = [
     "Intended Audience :: Developers",
@@ -25,6 +25,7 @@ dependencies = [
     "patsy",
     "plotnine",
     "joblib",
+    "docutils",
 ]
 
 [project.urls]
