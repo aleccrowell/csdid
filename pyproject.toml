@@ -1,0 +1,55 @@
+[project]
+name = "csdid"
+version = "0.2.9"
+description = "Difference in Difference in Python"
+authors = [
+    {name = "D2CML Team"},
+    {name = "Alexander Quispe"},
+    {name = "Carlos Guevara"},
+    {name = "Jhon Flores"},
+]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.8,<4.0"
+keywords = ["Causal inference", "Research"]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "pandas",
+    "numpy <= 1.24.3",
+    "scipy",
+    "patsy",
+    "plotnine",
+    "joblib",
+]
+
+[project.urls]
+Homepage = "https://github.com/d2cml-ai/csdid"
+Repository = "https://github.com/d2cml-ai/csdid"
+
+[tool.poetry]
+packages = [{include = "csdid"}]
+include = [
+    {path = "data", format = ["sdist"]},
+    {path = "configs", format = ["sdist"]},
+]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+pytest-parallel = "*"
+ipykernel = "*"
+statsmodels = "*"
+twine = "*"
+rpy2 = "^3.5.15"
+DRDID = {git = "https://github.com/d2cml-ai/DRDID"}
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

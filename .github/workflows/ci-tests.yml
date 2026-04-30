@@ -22,28 +22,25 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+
       - name: Setup python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
 
-      - name: Install Dependencies
-        run: pip install -r requirements.txt; pip install git+https://github.com/d2cml-ai/DRDID
+      - name: Install Poetry
+        run: pipx install poetry
 
-      - name: Install package
-        run: pip install .
+      - name: Install dependencies
+        run: poetry install --with dev
 
       - name: Setup r2u
         uses: eddelbuettel/github-actions/r2u-setup@master
 
-      - name: install R packages
+      - name: Install R packages
         run: Rscript -e 'install.packages(c("did"))'
         shell: bash
 
       - name: Run tests
-        run: |
-          pytest test/test_vs_r.py
-
-
-
+        run: poetry run pytest test/test_vs_r.py ${{ matrix.pytest_opts }}

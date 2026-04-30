@@ -12,25 +12,20 @@ jobs:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - id: Python_pip
-        name: Python dependencies
-        uses: actions/setup-python@v2
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.8"
-          cache: "pip"
-      - run: pip install -r requirements.txt
 
-      - name: Build Package
-        run: |
-          python setup.py sdist
+      - name: Install Poetry
+        run: pipx install poetry
 
-      - name: Upload to PyPi
+      - name: Build package
+        run: poetry build
+
+      - name: Publish to PyPI
         env:
-          TWINE_USERNAME: ${{ secrets.PYPI_USER}}
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: |
-          sudo apt-get install tree
-          tree /home/runner/work/csdid
-          twine upload dist/*
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_PASSWORD }}
+        run: poetry publish
