@@ -9,7 +9,7 @@ def makeBalancedPanel(data, idname, tname):
 
 def panel2cs2(data: pd.DataFrame, yname, idname, tname):
   if len(data[tname].unique()) != 2:
-    raise ValueError('panel2cs2 only for 2 perios of apnel data')
+    raise ValueError('panel2cs2 only for 2 periods of panel data')
 
   data = data.sort_values([idname, tname])
   y1 = data.groupby(idname)[yname].shift(-1)

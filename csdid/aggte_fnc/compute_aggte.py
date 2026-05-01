@@ -1,5 +1,3 @@
-import pickle
-import pandas as pd
 import numpy as np
 from scipy.stats import norm
 
@@ -118,7 +116,9 @@ def compute_aggte(MP,
     
     # Function to switch from "new" t values to original t values
     def t2orig(t):
-        return originalgtlist[uniquet.index(t) if t in uniquet else -1]
+        if t not in uniquet:
+            raise KeyError(f"t={t} not in uniquet")
+        return originalgtlist[uniquet.index(t)]
     
     # Function to switch between "original" t values and new t values
     def orig2t(orig):
@@ -180,7 +180,7 @@ def compute_aggte(MP,
         
         if simple_se is not None:
             if simple_se <= np.sqrt(np.finfo(float).eps) * 10:
-                simple_se = None
+                simple_se = np.nan
                 
         AGGTEobj_print = AGGTEobj(overall_att=simple_att, 
                                   overall_se=simple_se, 
@@ -201,7 +201,7 @@ def compute_aggte(MP,
         pg = np.array(pg) 
         selective_att_g = [np.mean(att[( group== g) & (t >= g) & (t <= (group + max_e))]) for g in glist]
         selective_att_g = np.asarray(selective_att_g)
-        selective_att_g[np.isnan(selective_att_g)] = None
+        selective_att_g[np.isnan(selective_att_g)] = np.nan
     
         selective_se_inner = [None] * len(glist)
         for i, g in enumerate(glist):
@@ -216,7 +216,7 @@ def compute_aggte(MP,
             selective_se_inner[i] = {'inf_func': inf_func_g, 'se': se_g}
             
         # recover standard errors separately by group   
-        selective_se_g = np.asarray([item['se'] for item in selective_se_inner]).T
+        selective_se_g = np.asarray([float(np.ravel(item['se'])[0]) for item in selective_se_inner])
         
         selective_se_g[selective_se_g <= np.sqrt(np.finfo(float).eps) * 10] = None
         
@@ -228,22 +228,22 @@ def compute_aggte(MP,
         
         if dp['cband']:
             if not dp['bstrap']:
-                print("Used bootstrap procedure to compute simultaneous confidence band")
+                warnings.warn("Used bootstrap procedure to compute simultaneous confidence band")
         
             selective_crit_val = mboot(selective_inf_func_g, dp)['crit_val']
         
             if np.isnan(selective_crit_val) or np.isinf(selective_crit_val):
-                print("Simultaneous critical value is NA. This probably happened because we cannot compute t-statistic (std errors are NA). We then report pointwise conf. intervals.")
+                warnings.warn("Simultaneous critical value is NA. This probably happened because we cannot compute t-statistic (std errors are NA). We then report pointwise conf. intervals.")
                 selective_crit_val = norm.ppf(1 - alp/2)
                 dp['cband'] = False
         
             if selective_crit_val < norm.ppf(1 - alp/2):
-                print("Simultaneous conf. band is somehow smaller than pointwise one using normal approximation. Since this is unusual, we are reporting pointwise confidence intervals")
+                warnings.warn("Simultaneous conf. band is somehow smaller than pointwise one using normal approximation. Since this is unusual, we are reporting pointwise confidence intervals")
                 selective_crit_val = norm.ppf(1 - alp/2)
                 dp['cband'] = False
         
             if selective_crit_val >= 7:
-                print("Simultaneous critical value is arguably 'too large' to be reliable. This usually happens when the number of observations per group is small and/or there is not much variation in outcomes.")
+                warnings.warn("Simultaneous critical value is arguably 'too large' to be reliable. This usually happens when the number of observations per group is small and/or there is not much variation in outcomes.")
   
         # get overall att under selective treatment timing
         # (here use pgg instead of pg because we can just look at each group)            
@@ -267,7 +267,7 @@ def compute_aggte(MP,
         selective_se = get_se(selective_inf_func, dp)
         if not np.isnan(selective_se):
             if selective_se <= np.sqrt(np.finfo(float).eps) * 10:
-                selective_se = None
+                selective_se = np.nan
     
         AGGTEobj_print = AGGTEobj(overall_att = selective_att, 
                             overall_se = selective_se, 
@@ -335,7 +335,7 @@ def compute_aggte(MP,
             se_e = get_se(inf_func_e, dp)
             dynamic_se_inner.append({'inf_func': inf_func_e, 'se': se_e})
 
-        dynamic_se_e = np.array([item['se'] for item in dynamic_se_inner]).T
+        dynamic_se_e = np.array([float(np.ravel(item['se'])[0]) for item in dynamic_se_inner])
         
         dynamic_se_e[dynamic_se_e <= np.sqrt(np.finfo(float).eps) * 10] = np.nan
         
@@ -358,7 +358,7 @@ def compute_aggte(MP,
                 dp['cband'] = False
         
             if dynamic_crit_val >= 7:
-                print("Simultaneous critical value is arguably 'too large' to be reliable. This usually happens when the number of observations per group is small and/or there is not much variation in outcomes.")
+                warnings.warn("Simultaneous critical value is arguably 'too large' to be reliable. This usually happens when the number of observations per group is small and/or there is not much variation in outcomes.")
 
         epos = eseq >= 0
         dynamic_att = np.mean(np.array(dynamic_att_e)[epos])
@@ -432,7 +432,7 @@ def compute_aggte(MP,
     
     
         # recover standard errors separately by time
-        calendar_se_t = np.array([se["se"] for se in calendar_se_inner]).T
+        calendar_se_t = np.array([float(np.ravel(se["se"])[0]) for se in calendar_se_inner])
         calendar_se_t[calendar_se_t <= np.sqrt(np.finfo(float).eps) * 10] = np.nan
         
         # recover influence function separately by time

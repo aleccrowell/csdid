@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.stats import mstats, norm
+from scipy.stats import norm
 from joblib import Parallel, delayed
 import pandas as pd
 
@@ -14,7 +14,7 @@ def mboot(inf_func, DIDparams, pl=False, cores=1):
     tname           = DIDparams['tname']
     try:
         tlist           = np.sort(data[tname].unique())
-    except:
+    except Exception:
         tlist           = np.sort(data[tname].unique().to_numpy())
     alp             = DIDparams['alp']
     panel           = DIDparams['panel']
@@ -37,8 +37,8 @@ def mboot(inf_func, DIDparams, pl=False, cores=1):
         clustervars.remove(idname)
 
     if clustervars is not None:
-        if isinstance(clustervars, list) and isinstance(clustervars[0], str):
-            raise ValueError("clustervars need to be the name of the clustering variable.")
+        if not (isinstance(clustervars, list) and all(isinstance(v, str) for v in clustervars)):
+            raise ValueError("clustervars must be a list of variable name strings.")
 
     # We can only handle up to 2-way clustering
     if clustervars is not None and len(clustervars) > 1:
@@ -56,7 +56,7 @@ def mboot(inf_func, DIDparams, pl=False, cores=1):
         bres = np.sqrt(n) * run_multiplier_bootstrap(inf_func, biters, pl, cores)
     else:
         n_clusters = len(data[clustervars].drop_duplicates())
-        cluster = dta[[idname, clustervars]].drop_duplicates().values[:, 1]
+        cluster = dta[[idname] + clustervars].drop_duplicates().values[:, 1]
         cluster_n = dta.groupby(cluster).size().values
         cluster_mean_if = pd.DataFrame(inf_func).groupby(cluster).sum().values / cluster_n
         bres = np.sqrt(n_clusters) * run_multiplier_bootstrap(cluster_mean_if, biters, pl, cores)

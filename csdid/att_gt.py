@@ -14,14 +14,20 @@ import matplotlib.pyplot as plt
 import warnings
 
 import numpy as np, pandas as pd
+from scipy.stats import norm
 
 # class ATTgt(AGGte):
 class ATTgt:
-  def __init__(self, yname, tname, idname, gname, data, control_group = ['nevertreated', 'notyettreated'], 
-  xformla: str = None, panel = True, allow_unbalanced_panel = True, 
-  clustervar = None, weights_name = None, anticipation = 0, 
-  cband = False, biters = 1000, alp = 0.05
-  ):
+  def __init__(self, yname: str, tname: str, idname: str, gname: str,
+               data: pd.DataFrame,
+               control_group: "list[str] | str" = ['nevertreated', 'notyettreated'],
+               xformla: str = None, panel: bool = True,
+               allow_unbalanced_panel: bool = True,
+               clustervar: "str | None" = None,
+               weights_name: "str | None" = None,
+               anticipation: int = 0,
+               cband: bool = False, biters: int = 1000, alp: float = 0.05
+               ):
     dp = pre_process_did(
       yname=yname, tname=tname, idname=idname, gname=gname,
       data=data, control_group=control_group, anticipation=anticipation,
@@ -35,15 +41,16 @@ class ATTgt:
     dp['cband'] = cband
     self.dp = dp
 
-  def fit(self, est_method = 'dr', base_period = 'varying', bstrap = True):
+  def fit(self, est_method: str = 'dr', base_period: str = 'varying', bstrap: bool = True) -> "ATTgt":
     # print(self.dp)
     dp = self.dp
     result, inffunc = compute_att_gt(dp, est_method = est_method, base_period = base_period)
     att = result['att']
     n_len = list(map(len, inffunc))
+    n_arr = np.array(n_len)
     crit_val, se, V = (
             1.96,
-            np.std(inffunc, axis=1, ddof = 1) / np.sqrt(n_len),
+            np.sqrt(np.mean(inffunc**2, axis=1) / n_arr),
             np.zeros(len(att)),
         )
     if bstrap:
@@ -107,18 +114,18 @@ class ATTgt:
     return self
 
   def aggte(
-    self, 
-    typec         = "group",
-    balance_e     = None,
-    min_e         = float('-inf'),
-    max_e         = float('inf'),
-    na_rm         = False,
-    bstrap        = None,
-    biters        = None,
-    cband         = None,
-    alp           = None,
-    clustervars   = None,
-    ):
+    self,
+    typec: str = "group",
+    balance_e: "int | None" = None,
+    min_e: float = float('-inf'),
+    max_e: float = float('inf'),
+    na_rm: bool = False,
+    bstrap: "bool | None" = None,
+    biters: "int | None" = None,
+    cband: "bool | None" = None,
+    alp: "float | None" = None,
+    clustervars: "list[str] | None" = None,
+    ) -> "ATTgt":
     mp = self.MP
     did_object = self.did_object
     
@@ -172,12 +179,13 @@ class ATTgt:
 
     if group is None:
       group = g
-      if any(group not in g for group in group):
+      if any(grp not in g for grp in group):
         raise ValueError("Some of the specified groups do not exist in the data. Reporting all available groups.")
 
 
     legend_1 = False    # for multiple subplots, legend outside 
-    fig, axes = plt.subplots(nrows=len(group), ncols=1, figsize=(10, 5))  # Adjust the figsize as needed
+    fig, axes = plt.subplots(nrows=len(group), ncols=1, figsize=(10, 5))
+    axes = np.atleast_1d(axes)
     handles = []
     labels = []
     for i, group_cat in enumerate(group):
@@ -212,7 +220,7 @@ class ATTgt:
     results = {
         "year": list(map(int, did_object["egt"])),
         "att": did_object["att_egt"],
-        "att_se": did_object["se_egt"][0],
+        "att_se": did_object["se_egt"],
         "post": post_treat
     }
     

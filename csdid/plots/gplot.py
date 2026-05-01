@@ -45,6 +45,7 @@ def gplot(ssresults, ax, ylim=None, xlab=None, ylab=None, title="Group", xgap=1,
     ax.set_title(title)
     ax.set_xlabel(xlab)
     ax.set_ylabel(ylab)
+    ax.xaxis.set_major_locator(plt.MultipleLocator(xgap))
 
     handles, labels = ax.get_legend_handles_labels()
     
