@@ -214,7 +214,7 @@
 #   data = data.assign(w1 = lambda x: x['w'] * 1)
 #   # data.loc[:, ".w"] = data['w']
 #   if len(glist) == 0:
-#     raise f"No valid groups. The variable in '{gname}' should be expressed as the time a unit is first treated (0 if never-treated)."
+#     raise ValueError(f"No valid groups. The variable in '{gname}' should be expressed as the time a unit is first treated (0 if never-treated).")
 #   if len(tlist) == 2:
 #     cband = False
 #   gsize = data.groupby(data[gname]).size().reset_index(name="count")
@@ -228,7 +228,7 @@
 #     warnings.warn(f"Be aware that there are some small groups in your dataset.\n  Check groups: {gpaste}.")
 
 #     if 0 in gsize[gname].to_numpy() and control_group == "nevertreated":
-#       raise "Never-treated group is too small, try setting control_group='notyettreated'."
+#       raise ValueError("Never-treated group is too small, try setting control_group='notyettreated'.")
 #   nT, nG = map(len, [tlist, glist])
 #   did_params = {
 #     'yname' : yname, 'tname': tname,
@@ -363,11 +363,11 @@ def pre_process_did(yname, tname, idname, gname, data: pd.DataFrame,
         n = len(pd.unique(data[idname]))
     else:
       keepers = data.dropna().index
-      n = len(data[idname].unique)
+      n = len(data[idname].unique())
       print(n)
       n_keep = len(data.iloc[keepers, idname].unique())
 
-      if len(data.loc[keepers] < len(data)):
+      if len(data.loc[keepers]) < len(data):
         print(f"Dropped {n-n_keep} observations that had missing data.")
         data = data.loc[keepers]
       # make balanced data set
@@ -386,7 +386,7 @@ def pre_process_did(yname, tname, idname, gname, data: pd.DataFrame,
     keepers = data.dropna().index.to_numpy()
     ndiff = len(data.loc[keepers]) - len(data)
     if len(keepers) == 0:
-      raise "All observations dropped due to missing data problems."
+      raise ValueError("All observations dropped due to missing data problems.")
     if ndiff < 0:
       mssg = f"Dropped {ndiff} observations that had missing data."
       data = data.loc[keepers]
@@ -404,7 +404,7 @@ def pre_process_did(yname, tname, idname, gname, data: pd.DataFrame,
   data = data.assign(w1 = lambda x: x['w'] * 1)
   # data.loc[:, ".w"] = data['w']
   if len(glist) == 0:
-    raise f"No valid groups. The variable in '{gname}' should be expressed as the time a unit is first treated (0 if never-treated)."
+    raise ValueError(f"No valid groups. The variable in '{gname}' should be expressed as the time a unit is first treated (0 if never-treated).")
   if len(tlist) == 2:
     cband = False
   gsize = data.groupby(data[gname]).size().reset_index(name="count")
@@ -418,7 +418,7 @@ def pre_process_did(yname, tname, idname, gname, data: pd.DataFrame,
     warnings.warn(f"Be aware that there are some small groups in your dataset.\n  Check groups: {gpaste}.")
 
     if 0 in gsize[gname].to_numpy() and control_group == "nevertreated":
-      raise "Never-treated group is too small, try setting control_group='notyettreated'."
+      raise ValueError("Never-treated group is too small, try setting control_group='notyettreated'.")
   nT, nG = map(len, [tlist, glist])
   did_params = {
     'yname' : yname, 'tname': tname,
@@ -429,6 +429,6 @@ def pre_process_did(yname, tname, idname, gname, data: pd.DataFrame,
     'control_group': control_group, 'anticipation': anticipation,
     'weights_name': weights_name, 'panel': panel,
     'true_rep_cross_section': true_rep_cross_section,
-    'clustervars': clustervar
+    'clustervars': [clustervar] if isinstance(clustervar, str) else clustervar
   }
   return did_params

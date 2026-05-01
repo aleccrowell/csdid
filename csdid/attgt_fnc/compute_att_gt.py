@@ -175,7 +175,7 @@ def compute_att_gt(dp, est_method = "dr", base_period = 'varying'):
                 att_inf = n / n1 * att_inf_func
                 inf_zeros[dis_idx] = att_inf
 
-                add_att_data(att_gt, inf_f=inf_zeros)
+                add_att_data(att_gt, pst=post_treat, inf_f=inf_zeros)
 
         #-----------------------------------------------------------------------------
         # results for the case with no panel data

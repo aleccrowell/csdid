@@ -180,7 +180,7 @@ def compute_aggte(MP,
         
         if simple_se is not None:
             if simple_se <= np.sqrt(np.finfo(float).eps) * 10:
-                simple_se = None
+                simple_se = np.nan
                 
         AGGTEobj_print = AGGTEobj(overall_att=simple_att, 
                                   overall_se=simple_se, 
@@ -267,7 +267,7 @@ def compute_aggte(MP,
         selective_se = get_se(selective_inf_func, dp)
         if not np.isnan(selective_se):
             if selective_se <= np.sqrt(np.finfo(float).eps) * 10:
-                selective_se = None
+                selective_se = np.nan
     
         AGGTEobj_print = AGGTEobj(overall_att = selective_att, 
                             overall_se = selective_se, 
