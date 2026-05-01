@@ -81,7 +81,6 @@
 #'
 #'
 from csdid.aggte_fnc.compute_aggte import compute_aggte
-import inspect
 
 def aggte(MP, 
           typec="group", 
@@ -94,7 +93,7 @@ def aggte(MP,
           cband=None, 
           alp=None, 
           clustervars=None):
-    call = inspect.currentframe().f_back.f_locals.copy()
+    call = None
 
     return compute_aggte(MP=MP, 
                   typec=typec, 

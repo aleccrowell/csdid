@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.stats import mstats, norm
+from scipy.stats import norm
 from joblib import Parallel, delayed
 import pandas as pd
 
@@ -14,7 +14,7 @@ def mboot(inf_func, DIDparams, pl=False, cores=1):
     tname           = DIDparams['tname']
     try:
         tlist           = np.sort(data[tname].unique())
-    except:
+    except Exception:
         tlist           = np.sort(data[tname].unique().to_numpy())
     alp             = DIDparams['alp']
     panel           = DIDparams['panel']
