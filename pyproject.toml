@@ -20,7 +20,7 @@ classifiers = [
 ]
 dependencies = [
     "pandas",
-    "numpy <= 1.24.3",
+    "numpy",
     "scipy",
     "patsy",
     "plotnine",
@@ -41,11 +41,9 @@ include = [
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
-pytest-parallel = "*"
 ipykernel = "*"
 statsmodels = "*"
 twine = "*"
-rpy2 = "^3.5.15"
 DRDID = {git = "https://github.com/d2cml-ai/DRDID"}
 
 [tool.pytest.ini_options]
