@@ -1,27 +1,23 @@
 # from aggte import AGGte
-from csdid.aggte_fnc.aggte import aggte as agg_te
-
-from csdid.attgt_fnc.preprocess_did import pre_process_did
-from csdid.attgt_fnc.compute_att_gt import compute_att_gt
-
-from csdid.utils.mboot import mboot
-
-from csdid.plots.gplot import gplot, splot
-
 
 import matplotlib.pyplot as plt
-
-import warnings
-
-import numpy as np, pandas as pd
+import numpy as np
+import pandas as pd
 from scipy.stats import norm
+
+from csdid.aggte_fnc.aggte import aggte as agg_te
+from csdid.attgt_fnc.compute_att_gt import compute_att_gt
+from csdid.attgt_fnc.preprocess_did import pre_process_did
+from csdid.plots.gplot import gplot, splot
+from csdid.utils.mboot import mboot
+
 
 # class ATTgt(AGGte):
 class ATTgt:
   def __init__(self, yname: str, tname: str, idname: str, gname: str,
                data: pd.DataFrame,
                control_group: "list[str] | str" = ['nevertreated', 'notyettreated'],
-               xformla: str = None, panel: bool = True,
+               xformla: "str | None" = None, panel: bool = True,
                allow_unbalanced_panel: bool = True,
                clustervar: "str | None" = None,
                weights_name: "str | None" = None,
@@ -48,16 +44,14 @@ class ATTgt:
     att = result['att']
     n_len = list(map(len, inffunc))
     n_arr = np.array(n_len)
-    crit_val, se, V = (
+    crit_val, se = (
             1.96,
             np.sqrt(np.mean(inffunc**2, axis=1) / n_arr),
-            np.zeros(len(att)),
         )
     if bstrap:
       ref_se = mboot(inffunc.T, dp)
       crit_val, se = ref_se['crit_val'], ref_se['se']
-      V = ref_se['V']
-    
+
     ############# aggte input
     group = result['group']
     att = result['att']
@@ -72,7 +66,7 @@ class ATTgt:
 
     mp = {
       'group': group, 'att': att, 't': tt,
-      'DIDparams': dp, 'inffunc': inf_fnc, 
+      'DIDparams': dp, 'inffunc': inf_fnc,
       'n': n
     }
     self.MP = mp
@@ -90,7 +84,7 @@ class ATTgt:
         'c': crit_val,
         'u_se': cband_upper, 'sig': sig_text
        })
-    
+
     self.results = result
 
     rst = result
@@ -128,7 +122,7 @@ class ATTgt:
     ) -> "ATTgt":
     mp = self.MP
     did_object = self.did_object
-    
+
     did_object.update({
       'type': typec
       }
@@ -136,23 +130,23 @@ class ATTgt:
 
 
     atte = agg_te(
-      mp, typec=typec, balance_e=balance_e, 
-      min_e=min_e, max_e=max_e, na_rm=na_rm, bstrap=bstrap, 
+      mp, typec=typec, balance_e=balance_e,
+      min_e=min_e, max_e=max_e, na_rm=na_rm, bstrap=bstrap,
       biters=biters, cband=cband, alp=alp, clustervars=clustervars
     )
 
     self.atte = atte
     return self
-  def plot_attgt(self, ylim=None, 
-                xlab=None, 
-                ylab=None, 
+  def plot_attgt(self, ylim=None,
+                xlab=None,
+                ylab=None,
                 title="Group",
-                xgap=1, 
-                ncol=1, 
-                legend=True, 
-                group=None, 
+                xgap=1,
+                ncol=1,
+                legend=True,
+                group=None,
                 ref_line=0,
-                theming=True, 
+                theming=True,
                 grtitle="Group"
                 ):
 
@@ -183,7 +177,7 @@ class ATTgt:
         raise ValueError("Some of the specified groups do not exist in the data. Reporting all available groups.")
 
 
-    legend_1 = False    # for multiple subplots, legend outside 
+    legend_1 = False    # for multiple subplots, legend outside
     fig, axes = plt.subplots(nrows=len(group), ncols=1, figsize=(10, 5))
     axes = np.atleast_1d(axes)
     handles = []
@@ -199,34 +193,34 @@ class ATTgt:
         handles.extend(handles_ax)
         labels.extend(labels_ax)
         fig.legend(handles, labels, loc='lower center', fontsize='small', bbox_to_anchor=(0.545, -0.075), ncol=2)
-    
-    plt.show()
-    return fig 
 
-  def plot_aggte(self, ylim=None, 
-                   xlab=None, 
-                   ylab=None, 
-                   title="", 
-                   xgap=1, 
-                   legend=True, 
-                   ref_line=0, 
+    plt.show()
+    return fig
+
+  def plot_aggte(self, ylim=None,
+                   xlab=None,
+                   ylab=None,
+                   title="",
+                   xgap=1,
+                   legend=True,
+                   ref_line=0,
                    theming=True,
                    **kwargs):
 
     did_object = self.atte
 
     post_treat = 1 * (np.asarray(did_object["egt"]).astype(int) >= 0)
-    
+
     results = {
         "year": list(map(int, did_object["egt"])),
         "att": did_object["att_egt"],
         "att_se": did_object["se_egt"],
         "post": post_treat
     }
-    
+
     results = pd.DataFrame(results)
     self.results_plot_df_aggte = results
-    
+
     if did_object['crit_val_egt'] is None:
         results['c'] = abs(norm.ppf(0.025))
     else:
@@ -248,6 +242,6 @@ class ATTgt:
         fig, ax = plt.subplots(figsize=(10, 5))
         p = gplot(results, ax, ylim, xlab, ylab, title, xgap, legend, ref_line, theming)
         plt.tight_layout()
-        plt.show() 
-        
+        plt.show()
+
     return p

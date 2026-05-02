@@ -140,7 +140,7 @@ def test_missing_outcome_dropped_with_warning():
     data.loc[data.index[0], "y"] = np.nan  # introduce one missing value
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
-        dp = pre_process_did("y", "year", "id", "g", data)
+        _ = pre_process_did("y", "year", "id", "g", data)
     messages = " ".join(str(warning.message) for warning in w)
     assert "Dropped" in messages or "missing" in messages.lower()
 
@@ -170,7 +170,7 @@ def test_early_treated_units_warned_and_dropped():
     data = pd.concat([data, early_unit], ignore_index=True)
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
-        dp = pre_process_did("y", "year", "id", "g", data)
+        _ = pre_process_did("y", "year", "id", "g", data)
     messages = " ".join(str(warning.message) for warning in w)
     assert "treated" in messages.lower() or "Dropped" in messages
 

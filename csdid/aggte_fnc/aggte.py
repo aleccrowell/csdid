@@ -82,31 +82,32 @@
 #'
 from csdid.aggte_fnc.compute_aggte import compute_aggte
 
-def aggte(MP, 
-          typec="group", 
-          balance_e=None, 
-          min_e=float('-inf'), 
-          max_e=float('inf'), 
+
+def aggte(MP,
+          typec="group",
+          balance_e=None,
+          min_e=float('-inf'),
+          max_e=float('inf'),
           na_rm=False,
-          bstrap=None, 
-          biters=None, 
-          cband=None, 
-          alp=None, 
+          bstrap=None,
+          biters=None,
+          cband=None,
+          alp=None,
           clustervars=None):
     call = None
 
-    return compute_aggte(MP=MP, 
-                  typec=typec, 
-                  balance_e=balance_e, 
-                  min_e=min_e, 
-                  max_e=max_e, 
+    return compute_aggte(MP=MP,
+                  typec=typec,
+                  balance_e=balance_e,
+                  min_e=min_e,
+                  max_e=max_e,
                   na_rm=na_rm,
-                  bstrap=bstrap, 
-                  biters=biters, 
-                  cband=cband, 
-                  alp=alp, 
-                  clustervars=clustervars, 
+                  bstrap=bstrap,
+                  biters=biters,
+                  cband=cband,
+                  alp=alp,
+                  clustervars=clustervars,
                   call=call)
 
- 
+
 

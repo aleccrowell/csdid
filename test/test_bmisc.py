@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from csdid.utils.bmisc import makeBalancedPanel, panel2cs2, TorF, multiplier_bootstrap
+from csdid.utils.bmisc import TorF, makeBalancedPanel, multiplier_bootstrap, panel2cs2
 
 
 class TestMakeBalancedPanel:

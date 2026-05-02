@@ -11,12 +11,11 @@ import pytest
 from csdid.attgt_fnc.drdid_trim import (
     _add_intercept,
     _trim_pscore,
-    std_ipw_did_panel,
     drdid_panel,
-    std_ipw_did_rc,
     drdid_rc,
+    std_ipw_did_panel,
+    std_ipw_did_rc,
 )
-
 
 TRUE_ATT_PANEL = 1.5
 TRUE_ATT_RC = 2.0
@@ -101,8 +100,8 @@ class TestTrimPscore:
         ps = np.array([0.998, 0.5])
         D = np.array([0, 0])
         ps_fit, trim_ps = _trim_pscore(ps, D, 0.995)
-        assert trim_ps[0] == False  # 0.998 >= 0.995 → trimmed
-        assert trim_ps[1] == True   # 0.5 < 0.995 → kept
+        assert not trim_ps[0]  # 0.998 >= 0.995 → trimmed
+        assert trim_ps[1]      # 0.5 < 0.995 → kept
 
     def test_pscore_capped_at_1_minus_epsilon(self):
         ps = np.array([1.0, 0.5])

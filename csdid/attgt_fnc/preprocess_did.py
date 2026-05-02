@@ -1,13 +1,16 @@
-import pandas as pd, numpy as np
-import patsy
-from csdid.utils.bmisc import makeBalancedPanel
 import warnings
+
+import numpy as np
+import pandas as pd
+import patsy
+
+from csdid.utils.bmisc import makeBalancedPanel
 
 fml = patsy.dmatrices
 
 def pre_process_did(yname, tname, idname, gname, data: pd.DataFrame,
   control_group = ['nevertreated', 'notyettreated'],
-  anticipation = 0, xformla: str = None,
+  anticipation = 0, xformla: "str | None" = None,
   panel = True, allow_unbalanced_panel = True, cband = False,
   clustervar = None, weights_name = None
   ) -> dict:
@@ -64,7 +67,7 @@ def pre_process_did(yname, tname, idname, gname, data: pd.DataFrame,
     if control_group == "nevertreated":
       raise ValueError("There is no available never-treated group")
     else:
-      value = np.max(glist) - anticipation
+      value = np.max(glist) - anticipation  # noqa: F841
       data = data.query(f'{tname} < @value')
       tlist = np.sort(data[tname].unique())
       glist = np.sort(data[gname].unique())
@@ -86,7 +89,7 @@ def pre_process_did(yname, tname, idname, gname, data: pd.DataFrame,
 
   if nfirst_period > 0:
     warnings.warn(f"Dropped {nfirst_period} units that were already treated in the first period.")
-    glist_in = np.append(glist, [0])
+    glist_in = np.append(glist, [0])  # noqa: F841
     data = data.query(f'{gname} in @glist_in')
     tlist = np.sort(data[tname].unique())
     glist = np.sort(data[gname].unique())
@@ -119,7 +122,7 @@ def pre_process_did(yname, tname, idname, gname, data: pd.DataFrame,
         raise ValueError("All observations dropped to convert data to balanced panel. Consider setting `panel=False` and/or revisit 'idname'.")
       if n < n_old:
         warnings.warn(f"Dropped {n_old - n} observations while converting to balanced panel.")
-      tn = tlist[0]
+      tn = tlist[0]  # noqa: F841
       n = len(data.query(f'{tname} == @tn'))
 
   if not panel:
@@ -142,7 +145,7 @@ def pre_process_did(yname, tname, idname, gname, data: pd.DataFrame,
   if len(glist) == 0:
     raise ValueError(f"No valid groups. The variable in '{gname}' should be expressed as the time a unit is first treated (0 if never-treated).")
   if len(tlist) == 2:
-    cband = False
+    cband = False  # noqa: F841
   gsize = data.groupby(data[gname]).size().reset_index(name="count")
   gsize["count"] /= len(tlist)
 

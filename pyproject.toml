@@ -45,6 +45,20 @@ ipykernel = "*"
 statsmodels = "*"
 twine = "*"
 DRDID = {git = "https://github.com/d2cml-ai/DRDID"}
+ruff = "^0.15.12"
+mypy = ">=1.0,<1.15"
+
+[tool.ruff]
+line-length = 100
+exclude = ["archive", "**/*.ipynb"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["test"]

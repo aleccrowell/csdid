@@ -1,15 +1,15 @@
-import numpy as np, pandas as pd
-import patsy
-from drdid import reg_did
-from csdid.attgt_fnc import drdid_trim
-
-from csdid.utils.bmisc import panel2cs2
 import warnings
 
+import numpy as np
+import pandas as pd
+import patsy
+from drdid import reg_did
+
+from csdid.attgt_fnc import drdid_trim
+from csdid.utils.bmisc import panel2cs2
 
 fml = patsy.dmatrices
-# Initialize a list to store data for each iteration
-results_list = []
+results_list: list = []
 
 def compute_att_gt(dp, est_method = "dr", base_period = 'varying'):
     yname = dp['yname']
@@ -17,15 +17,11 @@ def compute_att_gt(dp, est_method = "dr", base_period = 'varying'):
     idname = dp['idname']
     xformla = dp['xformla']
     data = dp['data'].copy()
-    weights_name = dp['weights_name']
     panel = dp['panel']
-    true_rep_cross_section = dp['true_rep_cross_section']
     control_group = dp['control_group']
     anticipation = dp['anticipation']
     gname = dp['gname']
     n = dp['n']
-    nT = dp['nT']
-    nG = dp['nG']
     tlist = dp['tlist']
     glist = dp['glist']
 
@@ -40,7 +36,7 @@ def compute_att_gt(dp, est_method = "dr", base_period = 'varying'):
     def build_covariates(formula, frame):
         try:
             _, cov = fml(formula, data=frame, return_type='dataframe')
-        except Exception as e:
+        except Exception:
             try:
                 cov = patsy.dmatrix(formula, data=frame, return_type='dataframe')
             except Exception as e2:

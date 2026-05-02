@@ -1,4 +1,7 @@
+import numpy as np
 import pandas as pd
+
+
 def makeBalancedPanel(data, idname, tname):
   data = data.sort_values([idname, tname]).reset_index(drop = True)
   nt = len(data[tname].unique())
@@ -20,13 +23,6 @@ def panel2cs2(data: pd.DataFrame, yname, idname, tname):
   )
   return data.dropna()
 
-# -*- coding: utf-8 -*-
-"""
-Created on Wed May 31 18:58:35 2023
-
-@author: Carlos Guevara
-"""
-import numpy as np
 
 def TorF(cond, use_isTRUE=False):
 
