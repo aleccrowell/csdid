@@ -1,6 +1,9 @@
 
 
-import yaml, pandas as pd
+import pandas as pd
+import yaml
+
+from csdid.attgt_fnc import preprocess_did
 
 with open('configs/data.yml') as f:
   dt = yaml.safe_load(f)
@@ -12,10 +15,7 @@ yname = "lemp"
 gname = "first.treat"
 idname = "countyreal"
 tname = "year"
-xformla = f"lemp~1"
-
-from csdid.attgt_fnc import preprocess_did
-from csdid.attgt_fnc import compute_att_gt
+xformla = "lemp~1"
 
 dp = preprocess_did(yname, tname, idname, gname, data = data, xformla=xformla)
 

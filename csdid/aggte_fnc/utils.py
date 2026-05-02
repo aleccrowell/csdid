@@ -1,34 +1,35 @@
+import numpy as np
+import pandas as pd
+import scipy.stats as stats
+
 from csdid.utils.bmisc import TorF
 from csdid.utils.mboot import mboot
 
-import numpy as np
-import scipy.stats as stats
-import pandas as pd
 
 def wif(keepers, pg, weights_ind, G, group):
     # note: weights are all of the form P(G=g|cond)/sum_cond(P(G=g|cond))
     # this is equal to P(G=g)/sum_cond(P(G=g)) which simplifies things here
     pg = np.array(pg)
     group = np.array(group)
-    
+
     # effect of estimating weights in the numerator
     if1 = np.empty((len(weights_ind), len(keepers)))
     for i, k  in enumerate(keepers):
         numerator = (weights_ind * 1 * TorF(G == group[k])) - pg[k]
-        # denominator = sum(np.array(pg)[keepers]) )[:, None]  
+        # denominator = sum(np.array(pg)[keepers]) )[:, None]
         denominator = np.sum(pg[keepers])
 
         result = numerator[:, None]  / denominator
         if1[:, i] = result.squeeze()
-    
+
     # effect of estimating weights in the denominator
     if2 = np.empty((len(weights_ind), len(keepers)))
     for i, k  in enumerate(keepers):
         numerator = ( weights_ind * 1 * TorF(G == group[k]) ) - pg[k]
         # result = numerator.to_numpy()[:, None]  @ multipler[:, None].T
         if2[:, i] = numerator.squeeze()
-    if2 = np.sum(if2, axis=1)    
-    multiplier = ( pg[keepers] / sum( pg[keepers] ) ** 2 )   
+    if2 = np.sum(if2, axis=1)
+    multiplier = ( pg[keepers] / sum( pg[keepers] ) ** 2 )
     if2 = np.outer( if2 , multiplier)
 
     # if1 = [((weights_ind * 1*TorF(G==group[k])) - pg[k]) / sum(pg[keepers]) for k in keepers]
@@ -46,18 +47,15 @@ def get_agg_inf_func(att, inffunc, whichones, weights_agg, wif=None):
     # Incorporate influence function of the weights
     if wif is not None:
         thisinffunc = thisinffunc + np.dot(wif, np.array(att[whichones]))
-        
+
     # return influence function
     return thisinffunc
 
 
 def get_se(thisinffunc, DIDparams=None):
-    alpha = 0.05
     bstrap = False
     if DIDparams is not None:
         bstrap = DIDparams['bstrap']
-        alpha = DIDparams['alp']
-        cband = DIDparams['cband']
         n = len(thisinffunc)
 
     if bstrap:
@@ -95,8 +93,8 @@ def AGGTEobj(overall_att=None,
         "call": call,
         "DIDparams": DIDparams
     }
-    
-    
+
+
     # Overall estimates
     alp = out["DIDparams"]["alp"]
     pointwise_cval = stats.norm.ppf(1 - alp / 2)
@@ -109,7 +107,7 @@ def AGGTEobj(overall_att=None,
     overall_sig = np.where(np.isnan(overall_sig), False, overall_sig)
     overall_sig_text = np.atleast_1d(np.where(overall_sig, "*", ""))
     out1 = np.column_stack((out1, overall_sig_text))
-    
+
     print("\n")
     if out["type"] == "dynamic":
         print("Overall summary of ATT's based on event-study/dynamic aggregation:")
@@ -120,7 +118,7 @@ def AGGTEobj(overall_att=None,
     colnames = ["ATT", "Std. Error", f"[{100 * (1 - out['DIDparams']['alp'])}%"," Conf. Int.]", ""]
     print(pd.DataFrame(out1, columns=colnames).to_string(index=False))
     print("\n")
-    
+
     # Handle cases depending on type
     if out["type"] in ["group", "dynamic", "calendar"]:
         if out["type"] == "dynamic":
@@ -132,38 +130,38 @@ def AGGTEobj(overall_att=None,
         elif out["type"] == "calendar":
             c1name = "Time"
             print("Time Effects (calendar):")
-    
+
         cband_text1a = f"{100 * (1 - out['DIDparams']['alp'])}% "
         cband_text1b = "Simult. " if out["DIDparams"]["bstrap"] else "Pointwise "
         cband_text1 = f"[{cband_text1a}{cband_text1b}"
-    
+
         cband_lower = out["att_egt"] - out["crit_val_egt"] * out["se_egt"]
         cband_upper = out["att_egt"] + out["crit_val_egt"] * out["se_egt"]
-    
+
         sig = (cband_upper < 0) | (cband_lower > 0)
         sig[np.isnan(sig)] = False
         sig_text = np.where(sig, "*", "").T
 
-        out2 = pd.DataFrame([out["egt"], 
-                             out["att_egt"], 
-                             out["se_egt"].flatten(), 
+        out2 = pd.DataFrame([out["egt"],
+                             out["att_egt"],
+                             out["se_egt"].flatten(),
                              np.hstack(cband_lower),
                              np.hstack(cband_upper)]).T
-        
+
         out2 = out2.round(4)
         out2[0] = out2[0].astype(int)
-        out2 = pd.concat([out2, pd.DataFrame(sig_text, columns=['sig_text']) ], axis=1)    
-        
+        out2 = pd.concat([out2, pd.DataFrame(sig_text, columns=['sig_text']) ], axis=1)
+
         out2.columns = [c1name, "Estimate", "Std. Error", cband_text1, "Conf. Band", ""]
         print(out2)
-    
-    
-    
 
-    
+
+
+
+
     print("---")
     print("Signif. codes: `*' confidence band does not cover 0")
-    
+
     # Set control group text
     control_group = out["DIDparams"]["control_group"]
     control_group_text = None
@@ -171,13 +169,13 @@ def AGGTEobj(overall_att=None,
         control_group_text = "Never Treated"
     elif control_group == "notyettreated":
         control_group_text = "Not Yet Treated"
-    
+
     if control_group:
         print("Control Group: ", control_group_text, ", ")
-    
+
     # Anticipation periods
     print("Anticipation Periods: ", out["DIDparams"]["anticipation"])
-    
+
     # Estimation method text
     est_method = out["DIDparams"]["est_method"]
     if isinstance(est_method, str):
@@ -188,9 +186,9 @@ def AGGTEobj(overall_att=None,
             est_method_text = "Inverse Probability Weighting"
         elif est_method == "reg":
             est_method_text = "Outcome Regression"
-    
+
         print("Estimation Method: ", est_method_text)
         print("\n")
-        
+
     return out
 

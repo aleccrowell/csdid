@@ -9,6 +9,29 @@ on:
       - main
 
 jobs:
+  lint:
+    name: "Lint & typecheck"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Lint (ruff)
+        run: poetry run ruff check .
+
+      - name: Typecheck (mypy)
+        run: poetry run mypy csdid
+
   test:
     name: "Test (Python ${{ matrix.python-version }})"
     runs-on: ubuntu-latest

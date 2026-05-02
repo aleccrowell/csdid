@@ -1,13 +1,14 @@
 import numpy as np
-from scipy.stats import norm
-from joblib import Parallel, delayed
 import pandas as pd
+from joblib import Parallel, delayed
+from scipy.stats import norm
 
 from csdid.utils.bmisc import multiplier_bootstrap
 
+
 def mboot(inf_func, DIDparams, pl=False, cores=1):
     # Setup needed variables
-    data            = DIDparams['data'] 
+    data            = DIDparams['data']
     idname          = DIDparams['idname']
     clustervars     = DIDparams['clustervars']
     biters          = DIDparams['biters']
@@ -18,7 +19,6 @@ def mboot(inf_func, DIDparams, pl=False, cores=1):
         tlist           = np.sort(data[tname].unique().to_numpy())
     alp             = DIDparams['alp']
     panel           = DIDparams['panel']
-    true_repeated_cross_sections = DIDparams['true_repeated_cross_sections']
 
     # Get n observations (for clustering below)
     if panel:
@@ -49,7 +49,7 @@ def mboot(inf_func, DIDparams, pl=False, cores=1):
         clust_tv = dta.groupby(idname)[clustervars[0]].nunique() == 1
         if not clust_tv.all():
             raise ValueError("Can't handle time-varying cluster variables")
-    # clustervars='year'    
+    # clustervars='year'
     # Multiplier bootstrap
     n_clusters = n
     if not clustervars:
@@ -78,14 +78,14 @@ def mboot(inf_func, DIDparams, pl=False, cores=1):
     quantile_75 = np.quantile(bres, 0.75, axis=0, method="inverted_cdf")
     quantile_25 = np.quantile(bres, 0.25, axis=0, method="inverted_cdf")
     qnorm_75 = norm.ppf(0.75)
-    qnorm_25 = norm.ppf(0.25)   
+    qnorm_25 = norm.ppf(0.25)
     bSigma = (quantile_75 - quantile_25) / (qnorm_75 - qnorm_25)
-        
+
     # Critical value for uniform confidence band
     bT = np.max(np.abs(bres / bSigma), axis=1)
     bT = bT[np.isfinite(bT)]
     crit_val = np.quantile(bT, 1 - alp, method="inverted_cdf")
-    
+
     # Standard error
     se = np.full(ndg_dim.shape, np.nan)
     se[ndg_dim] = bSigma / np.sqrt(n_clusters)
