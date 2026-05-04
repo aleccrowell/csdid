@@ -91,7 +91,23 @@ For each (group, time) cell, csdid estimates ATT(g, t) by comparing group *g* in
 | Inverse Probability Weighting | `"ipw"` | Re-weights control units by the inverse of estimated propensity scores. Relies entirely on correct propensity score specification. |
 | Outcome Regression | `"reg"` | Fits a linear outcome model on the control group and extrapolates to the treated group. Relies entirely on correct outcome model specification. |
 
-All methods support a **varying base period** (each pre-treatment period is compared to the immediately preceding period) or a **universal base period** (all periods are compared to a single fixed pre-treatment period).
+### Base Period
+
+Every ATT(g, t) estimate is a two-period DiD: it compares the outcome change between some **base period** and period *t* for group *g* against the same change for control units. The choice of base period determines what that "before" snapshot is.
+
+**Varying base period** (`base_period="varying"`, default): the base period for ATT(g, t) is always *t − 1*, the period immediately preceding *t*. Each cell is identified from a consecutive-period comparison. This is statistically efficient (it uses all available pre-treatment variation), but it means pre-treatment estimates in an event-study plot are not all anchored to the same reference point — each one measures the change *from the preceding year*, so they accumulate rather than all being relative to the same baseline.
+
+**Universal base period** (`base_period="universal"`): a single fixed period is used as the base for every ATT(g, t) in the group — typically the last pre-treatment period for group *g* (i.e., period *g − 1*). All estimates for a given cohort are then expressed relative to the same pre-treatment snapshot, making event-study plots easier to read: the pre-treatment estimates represent cumulative changes from the common baseline, and the value at event time −1 is identically zero by construction.
+
+In practice, the two options produce similar results when parallel trends holds. Use `"universal"` when you want pre-treatment estimates to be on a common scale for plotting; use `"varying"` (the default) for maximum efficiency.
+
+```python
+# Default: each cell compared to the preceding period
+out = ATTgt(...).fit(base_period="varying")
+
+# All cells for each group compared to g-1
+out = ATTgt(...).fit(base_period="universal")
+```
 
 ### Inference
 
@@ -190,7 +206,7 @@ out = ATTgt(
 
 2. **Grid construction**: The package enumerates all valid (group *g*, time *t*) combinations. For group *g*, the relevant pairs are all calendar periods *t* from the start of the data up through the last period — giving pre-treatment placebo cells and post-treatment effect cells.
 
-3. **Estimation loop** (`compute_att_gt`): For each (g, t) cell, the package isolates units from group *g* and control units, constructs a two-period DiD dataset (base period vs. period *t*), and runs the chosen estimator. With `est_method="dr"`, a logistic propensity score is estimated, then the doubly-robust DiD formula is applied.
+3. **Estimation loop** (`compute_att_gt`): For each (g, t) cell, the package isolates units from group *g* and control units, then constructs a two-period DiD comparing the **base period** to period *t*. With the default `base_period="varying"`, the base period is always *t − 1* (the immediately preceding period). With `base_period="universal"`, it is fixed at *g − 1* (the last pre-treatment period for that cohort) for all *t*. The chosen estimator — here `est_method="dr"` — runs on this two-period dataset: a logistic propensity score is estimated to re-weight controls, and the doubly-robust DiD formula is applied.
 
 4. **Bootstrap inference** (`mboot`): Influence functions from each cell are stacked and resampled 1000 times to produce standard errors and simultaneous confidence bands.
 
