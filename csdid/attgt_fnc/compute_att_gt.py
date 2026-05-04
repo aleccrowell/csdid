@@ -119,7 +119,7 @@ def compute_att_gt(dp, est_method = "dr", base_period = 'varying'):
             if panel:
                 disdat = panel2cs2(disdat, yname, idname, tname)
                 disdat = disdat.dropna()
-                n = len(disdat)
+                n_sub = len(disdat)  # units present in both periods; equals n for balanced panels
                 dis_idx = np.array(disdat.G_m == 1) | np.array(disdat.C == 1)
                 disdat = disdat.loc[dis_idx, :]
                 n1 = len(disdat)
@@ -146,7 +146,7 @@ def compute_att_gt(dp, est_method = "dr", base_period = 'varying'):
                 att_gt, att_inf_func = est_att_f(ypost, ypre, G, i_weights=w, covariates=covariates)
 
                 inf_zeros = np.zeros(n)
-                att_inf = n / n1 * att_inf_func
+                att_inf = n_sub / n1 * att_inf_func
                 inf_zeros[dis_idx] = att_inf
 
                 add_att_data(att_gt, pst=post_treat, inf_f=inf_zeros)
