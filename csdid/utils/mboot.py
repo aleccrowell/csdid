@@ -46,7 +46,7 @@ def mboot(inf_func, DIDparams, pl=False, cores=1):
 
     if clustervars is not None:
         # Check that cluster variable does not vary over time within unit
-        clust_tv = dta.groupby(idname)[clustervars[0]].nunique() == 1
+        clust_tv = data.groupby(idname)[clustervars[0]].nunique() == 1
         if not clust_tv.all():
             raise ValueError("Can't handle time-varying cluster variables")
     # clustervars='year'
@@ -58,7 +58,7 @@ def mboot(inf_func, DIDparams, pl=False, cores=1):
         n_clusters = len(data[clustervars].drop_duplicates())
         cluster = dta[[idname] + clustervars].drop_duplicates().values[:, 1]
         cluster_n = dta.groupby(cluster).size().values
-        cluster_mean_if = pd.DataFrame(inf_func).groupby(cluster).sum().values / cluster_n
+        cluster_mean_if = pd.DataFrame(inf_func).groupby(cluster).sum().values / cluster_n[:, np.newaxis]
         bres = np.sqrt(n_clusters) * run_multiplier_bootstrap(cluster_mean_if, biters, pl, cores)
 
     # Handle vector and matrix case differently to get nxk matrix
@@ -70,6 +70,10 @@ def mboot(inf_func, DIDparams, pl=False, cores=1):
     # Non-degenerate dimensions
     ndg_dim = np.logical_and(~np.isnan(np.sum(bres, axis=0)), np.sum(bres ** 2, axis=0) > np.sqrt(np.finfo(float).eps) * 10)
     bres = bres[:, ndg_dim]
+
+    if bres.shape[1] == 0:
+        se = np.full(ndg_dim.shape, np.nan)
+        return {'bres': bres, 'V': np.array([]), 'se': se, 'crit_val': np.nan}
 
     # Bootstrap variance matrix (this matrix can be defective because of degenerate cases)
     V = np.cov(bres, rowvar=False)

@@ -110,7 +110,7 @@ def pre_process_did(yname, tname, idname, gname, data: pd.DataFrame,
     else:
       keepers = data.dropna().index
       n = len(data[idname].unique())
-      n_keep = len(data.iloc[keepers, idname].unique())
+      n_keep = len(data.loc[keepers, idname].unique())
 
       if len(data.loc[keepers]) < len(data):
         warnings.warn(f"Dropped {n - n_keep} observations that had missing data.")
