@@ -47,6 +47,7 @@ twine = "*"
 DRDID = {git = "https://github.com/d2cml-ai/DRDID"}
 ruff = "^0.15.12"
 mypy = ">=1.0,<1.15"
+pytest-cov = "^7.1.0"
 
 [tool.ruff]
 line-length = 100

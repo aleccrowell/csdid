@@ -196,3 +196,72 @@ def test_weights_name_passed_through(basic_data):
     data["wt"] = 1.0
     dp = pre_process_did("y", "year", "id", "g", data, weights_name="wt")
     assert dp["weights_name"] == "wt"
+
+
+# ---------------------------------------------------------------------------
+# panel=False (repeated cross-section) preprocessing path
+# ---------------------------------------------------------------------------
+
+def test_panel_false_assigns_rowid():
+    data = make_data(n_per_group=10, periods=(2000, 2001, 2002), groups=(2001, 0))
+    dp = pre_process_did("y", "year", "id", "g", data, panel=False)
+    assert "rowid" in dp["data"].columns
+
+
+def test_panel_false_n_equals_total_rows():
+    data = make_data(n_per_group=10, periods=(2000, 2001, 2002), groups=(2001, 0))
+    dp = pre_process_did("y", "year", "id", "g", data, panel=False)
+    # Each row is treated as a unique unit; n = number of rows after preprocessing
+    assert dp["n"] == len(dp["data"])
+
+
+def test_panel_false_stores_true_rep_cross_section():
+    data = make_data(n_per_group=10, periods=(2000, 2001, 2002), groups=(2001, 0))
+    dp = pre_process_did("y", "year", "id", "g", data, panel=False)
+    assert dp["true_rep_cross_section"] is True
+
+
+# ---------------------------------------------------------------------------
+# allow_unbalanced_panel=False — makeBalancedPanel path
+# ---------------------------------------------------------------------------
+
+def test_allow_unbalanced_panel_false_drops_incomplete_units():
+    """An unbalanced panel loses units with missing periods when balanced."""
+    data = make_data(n_per_group=10, periods=(2000, 2001, 2002), groups=(2001, 0))
+    # Drop one observation for a single unit, making the panel unbalanced
+    data = data.drop(data.index[0]).reset_index(drop=True)
+    dp = pre_process_did("y", "year", "id", "g", data, allow_unbalanced_panel=False)
+    # After balancing, n should be one unit fewer than the original
+    assert dp["n"] < 30  # originally 30 units (10 per group × 3 groups)
+
+
+def test_allow_unbalanced_panel_false_result_is_balanced():
+    """Each unit in the result should appear in every time period."""
+    data = make_data(n_per_group=10, periods=(2000, 2001, 2002), groups=(2001, 0))
+    dp = pre_process_did("y", "year", "id", "g", data, allow_unbalanced_panel=False)
+    result = dp["data"]
+    counts = result.groupby(dp["idname"])[dp["tname"]].count()
+    n_periods = len(dp["tlist"])
+    assert (counts == n_periods).all()
+
+
+# ---------------------------------------------------------------------------
+# Small group size warning
+# preprocess_did.py:156-160
+# ---------------------------------------------------------------------------
+
+def test_small_group_triggers_warning():
+    """A group with fewer observations than the minimum required emits a warning."""
+    # 1 unit in the treated group is far below any reasonable threshold
+    rows = []
+    for year in (2000, 2001, 2002):
+        rows.append({"id": 1, "year": year, "y": 1.0, "g": 2001})
+    for i in range(2, 22):
+        for year in (2000, 2001, 2002):
+            rows.append({"id": i, "year": year, "y": 0.0, "g": 0})
+    data = pd.DataFrame(rows)
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        pre_process_did("y", "year", "id", "g", data)
+    messages = " ".join(str(warning.message) for warning in w)
+    assert "small" in messages.lower()
