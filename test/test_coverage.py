@@ -3,10 +3,10 @@ Tests targeting the coverage gaps identified in the R did faithfulness audit.
 
 Each section states which source lines it exercises.
 """
-import warnings
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")   # non-interactive backend; must be set before pyplot import
 import matplotlib.pyplot as plt
 import numpy as np
