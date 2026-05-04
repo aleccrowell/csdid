@@ -109,9 +109,51 @@ out = ATTgt(...).fit(base_period="varying")
 out = ATTgt(...).fit(base_period="universal")
 ```
 
-### Inference
+### Influence Functions
 
-Standard errors are computed via the **multiplier bootstrap** — a fast, sample-efficient bootstrap that resamples the influence functions of the estimators rather than the raw data. This produces valid pointwise confidence intervals and simultaneous confidence bands (the latter accounting for the joint distribution of all ATT(g, t) estimates). The number of bootstrap iterations is controlled via `biters` (default 1000).
+Every estimator in csdid returns not just a point estimate but also an **influence function** — an *n*-length vector (one value per unit in the sample) that describes each unit's contribution to the estimate. Formally, if ATT̂(g, t) is the estimate and ψ_i(g, t) is unit *i*'s influence function value, then:
+
+> ATT̂(g, t) ≈ (1/n) Σᵢ ψᵢ(g, t)
+
+This is a first-order linearisation of the estimator. It means the estimate can be decomposed into independent, unit-level scores — a property that makes fast, theoretically valid inference possible without re-running the full estimation many times.
+
+For the doubly-robust estimator, ψᵢ(g, t) combines the residuals from both the propensity score model and the outcome regression model. For the IPW estimator it is driven by the propensity score residuals alone; for outcome regression it is driven by the outcome model residuals alone. The influence functions are computed as a by-product of each cell's estimation with no additional cost.
+
+After the estimation loop, the influence functions from all K cells are stacked column-by-column into an **n × K matrix**. This matrix is the input to the bootstrap.
+
+### Multiplier Bootstrap
+
+Rather than resampling the dataset and re-running the full estimator B times — which would be computationally prohibitive with many (g, t) cells — csdid uses a **multiplier bootstrap** that operates directly on the influence function matrix.
+
+For each bootstrap iteration *b*:
+
+1. Draw *n* independent **Rademacher weights** u₁, …, uₙ, each equal to +1 or −1 with probability 0.5.
+2. Multiply each row of the influence function matrix by its weight: ψᵢ(g, t) · uᵢ.
+3. Average across units to get one bootstrap replicate per cell:
+
+> bootstrap_replicate_b(g, t) = (1/n) Σᵢ ψᵢ(g, t) · uᵢ
+
+This is repeated `biters` times (default 1000), producing a `biters × K` matrix of bootstrap draws. Because only the *n* random weights need to be redrawn each iteration (no re-fitting of models), this is orders of magnitude faster than a naive nonparametric bootstrap.
+
+**Why Rademacher weights?** The ±1 distribution has mean zero and variance one, which is all that is needed for the central limit theorem approximation underlying multiplier bootstrap validity. The procedure is asymptotically equivalent to the nonparametric bootstrap but significantly cheaper.
+
+### Standard Errors and Confidence Bands
+
+**Pointwise standard errors** are computed from the spread of the bootstrap distribution for each cell independently. Rather than the sample standard deviation, the package uses an **IQR-based robust scale estimator**:
+
+> σ̂(g, t) = (Q₇₅ − Q₂₅) / (Φ⁻¹(0.75) − Φ⁻¹(0.25))
+
+where Q₇₅ and Q₂₅ are the 75th and 25th percentiles of the bootstrap draws for that cell, and Φ⁻¹ is the standard normal quantile function. Dividing by the corresponding normal quantile difference converts the IQR into an estimate of the standard deviation. This estimator is robust to outlier bootstrap draws. The standard error reported in the summary tables is σ̂(g, t) / √n.
+
+**Simultaneous confidence bands** require a single critical value *c* such that all K confidence intervals `[ATT̂(g,t) ± c · SE(g,t)]` jointly cover their true values with probability 1 − α. This is stronger than pointwise coverage and accounts for the fact that you are inspecting many estimates at once. The package computes it by taking the maximum standardised bootstrap statistic across all cells in each iteration:
+
+> T_b = max_{g,t} | bootstrap_replicate_b(g, t) / σ̂(g, t) |
+
+and then setting *c* to the (1 − α) quantile of the distribution of T_b across the B iterations. This is the **sup-t** critical value and directly controls the uniform coverage probability over all cells simultaneously.
+
+**Clustering**: when `clustervar` is supplied, influence functions are summed within each cluster before the bootstrap runs, and n_clusters replaces n throughout. This makes the bootstrap resample at the cluster level, producing standard errors and critical values that are robust to within-cluster correlation.
+
+**Parallelisation**: for large datasets (n > 2500), the bootstrap iterations can be split across CPU cores by passing `pl=True` and `cores=k` to the underlying bootstrap call. The biters iterations are divided into equal chunks and run in parallel via `joblib`, with results concatenated at the end.
 
 ---
 
@@ -208,7 +250,7 @@ out = ATTgt(
 
 3. **Estimation loop** (`compute_att_gt`): For each (g, t) cell, the package isolates units from group *g* and control units, then constructs a two-period DiD comparing the **base period** to period *t*. With the default `base_period="varying"`, the base period is always *t − 1* (the immediately preceding period). With `base_period="universal"`, it is fixed at *g − 1* (the last pre-treatment period for that cohort) for all *t*. The chosen estimator — here `est_method="dr"` — runs on this two-period dataset: a logistic propensity score is estimated to re-weight controls, and the doubly-robust DiD formula is applied.
 
-4. **Bootstrap inference** (`mboot`): Influence functions from each cell are stacked and resampled 1000 times to produce standard errors and simultaneous confidence bands.
+4. **Bootstrap inference** (`mboot`): Each estimator returns a unit-level influence function alongside its point estimate. These are stacked into an n × K matrix and passed to the multiplier bootstrap, which draws Rademacher ±1 weights 1000 times to generate bootstrap replicates cheaply. Standard errors use an IQR-based robust scale estimator; simultaneous confidence bands use the sup-t critical value from the maximum standardised statistic across all K cells. See [Influence Functions](#influence-functions) and [Multiplier Bootstrap](#multiplier-bootstrap) for details.
 
 The result is stored in `out` (the `ATTgt` object itself) and is ready for inspection and aggregation.
 
