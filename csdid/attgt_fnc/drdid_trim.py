@@ -1,3 +1,15 @@
+"""
+Local re-implementations of the DRDID doubly-robust and IPW estimators.
+
+These functions mirror the R DRDID package (pedrohcgs/DRDID) exactly, including
+propensity-score trimming (default threshold 0.995 for control units). The upstream
+Python `drdid` package (used only for `reg_did`) omits this trimming, so DR and IPW
+methods are kept here to preserve fidelity with the R reference implementation.
+
+Functions exported for use in compute_att_gt:
+  drdid_panel, drdid_rc         – doubly-robust estimators
+  std_ipw_did_panel, std_ipw_did_rc – inverse-probability-weighting estimators
+"""
 import warnings
 
 import numpy as np

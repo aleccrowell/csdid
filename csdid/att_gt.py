@@ -173,6 +173,7 @@ class ATTgt:
 
     if group is None:
       group = g
+    else:
       if any(grp not in g for grp in group):
         raise ValueError("Some of the specified groups do not exist in the data. Reporting all available groups.")
 
